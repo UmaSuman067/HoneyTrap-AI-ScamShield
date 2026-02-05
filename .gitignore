@@ -1,0 +1,3 @@
+# ignore local secret files
+.env
+.env.local

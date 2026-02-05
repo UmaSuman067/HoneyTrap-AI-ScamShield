@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ScamShield Live Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-900 text-white p-8">
+    <h1 class="text-3xl font-bold mb-4">🛡️ ScamShield AI Live Feed</h1>
+
+    <div class="grid grid-cols-2 gap-8">
+        <div class="bg-slate-800 p-6 rounded-xl">
+            <h2 class="text-xl mb-4">Live Reports</h2>
+            <div id="logs" class="space-y-4 h-[500px] overflow-y-auto">
+                <p class="text-slate-400">Waiting for scammers...</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-xl text-slate-400">
+            <h2 class="text-xl text-white mb-4">How to test?</h2>
+            <p>Go to <b>/docs</b> → POST <b>/api/honey-pot</b> with a UPI ID</p>
+        </div>
+    </div>
+
+    <script>
+        const logs = document.getElementById("logs");
+        const es = new EventSource("/events");
+
+        es.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+
+            const div = document.createElement("div");
+            div.className = "p-4 bg-slate-700 rounded border-l-4 border-blue-500";
+
+            if (data.type === "message_received") {
+                div.innerHTML = `
+                <p class="text-xs text-slate-400">Session: ${data.sessionId}</p>
+                <p class="text-red-400"><b>Scammer:</b> ${data.message}</p>
+                <p class="text-green-400"><b>Priya:</b> ${data.ai_reply}</p>
+                <p class="text-yellow-400"><b>Intel:</b> ${JSON.stringify(data.extracted)}</p>
+            `;
+            }
+
+            if (data.type === "guvi_report") {
+                div.classList.add("border-red-500", "bg-red-900/30");
+                div.innerHTML = `
+                <p class="text-red-300"><b>🚨 GUVI Report Sent</b></p>
+                <p class="text-xs">Session: ${data.sessionId}</p>
+                <pre class="text-xs">${JSON.stringify(data.report, null, 2)}</pre>
+            `;
+            }
+
+            if (logs.textContent.includes("Waiting")) logs.innerHTML = "";
+            logs.prepend(div);
+        };
+
+        es.onerror = () => {
+            console.log("SSE disconnected");
+        };
+    </script>
+</body>
+</html>
